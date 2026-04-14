@@ -1,0 +1,174 @@
+@startuml class-diagram
+title LLM Darija Translator — Backend Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam classFontSize 13
+skinparam classBackgroundColor #F7FAFC
+skinparam classBorderColor #3182CE
+skinparam arrowColor #2B6CB0
+skinparam noteBackgroundColor #EBF8FF
+skinparam noteBorderColor #90CDF4
+
+' ─── DTOs ──────────────────────────────────────────────────────────
+package "dto" #EDF2F7 {
+  class TranslationRequest {
+    - text : String
+    - sourceLanguage : String
+    - targetLanguage : String
+    + getText() : String
+    + getSourceLanguage() : String
+    + getTargetLanguage() : String
+  }
+
+  class TranslationResponse {
+    - originalText : String
+    - translatedText : String
+    - sourceLanguage : String
+    - targetLanguage : String
+    - provider : String
+    - status : String
+  }
+
+  class ErrorResponse {
+    - error : String
+    - message : String
+    - status : int
+  }
+}
+
+' ─── Config ────────────────────────────────────────────────────────
+package "config" #EDF2F7 {
+  class AppConfig {
+    <<@ApplicationScoped>>
+    - appName : String
+    - appVersion : String
+    - authUsername : String
+    - authPassword : String
+    - geminiApiKey : String
+    - geminiModel : String
+    - geminiApiUrl : String
+    - maxTextLength : int
+    + getGeminiApiKey() : String
+    + getAuthUsername() : String
+    + getMaxTextLength() : int
+  }
+}
+
+' ─── Exceptions ────────────────────────────────────────────────────
+package "exception" #EDF2F7 {
+  class ValidationException {
+    <<RuntimeException>>
+    + ValidationException(message : String)
+  }
+  class TranslationException {
+    <<RuntimeException>>
+    + TranslationException(message : String)
+  }
+  class ValidationExceptionMapper {
+    <<@Provider, ExceptionMapper>>
+    + toResponse(ex) : Response
+  }
+  class TranslationExceptionMapper {
+    <<@Provider, ExceptionMapper>>
+    + toResponse(ex) : Response
+  }
+  class GeneralExceptionMapper {
+    <<@Provider, ExceptionMapper>>
+    + toResponse(ex) : Response
+  }
+  ValidationExceptionMapper ..> ValidationException : maps
+  TranslationExceptionMapper ..> TranslationException : maps
+}
+
+' ─── Security ──────────────────────────────────────────────────────
+package "security" #EDF2F7 {
+  class BasicAuthFilter {
+    <<@Provider, @PreMatching, ContainerRequestFilter>>
+    - config : AppConfig
+    + filter(ctx : ContainerRequestContext) : void
+    - isValidCredentials(header : String) : boolean
+    - abortWithUnauthorized(ctx, message) : void
+  }
+}
+
+' ─── Filter ────────────────────────────────────────────────────────
+package "filter" #EDF2F7 {
+  class CorsFilter {
+    <<@Provider, ContainerRequestFilter\nContainerResponseFilter>>
+    + filter(req) : void
+    + filter(req, resp) : void
+  }
+}
+
+' ─── LLM ───────────────────────────────────────────────────────────
+package "llm" #EDF2F7 {
+  class GeminiTranslationClient {
+    <<@ApplicationScoped>>
+    - config : AppConfig
+    - TRANSLATION_INSTRUCTIONS : String
+    + translate(text, source, target) : String
+    - buildPrompt(text, source, target) : String
+    - callGemini(prompt : String) : String
+    - buildGeminiRequestJson(prompt) : String
+    - parseTranslatedText(body : String) : String
+  }
+}
+
+' ─── Service ───────────────────────────────────────────────────────
+package "service" #EDF2F7 {
+  class TranslationService {
+    <<@ApplicationScoped>>
+    - config : AppConfig
+    - geminiClient : GeminiTranslationClient
+    + translate(request : TranslationRequest) : TranslationResponse
+    - validate(request) : void
+    - resolveSourceLanguage(lang) : String
+    - resolveTargetLanguage(lang) : String
+  }
+}
+
+' ─── Resource ──────────────────────────────────────────────────────
+package "resource" #EDF2F7 {
+  class TranslatorResource {
+    <<@RequestScoped, @Path("/translator")>>
+    - translationService : TranslationService
+    - config : AppConfig
+    + health() : Response
+    + info() : Response
+    + translate(request : TranslationRequest) : Response
+  }
+}
+
+' ─── JAX-RS Application ─────────────────────────────────────────────
+class TranslatorApplication {
+  <<@ApplicationPath("/api"), Application>>
+}
+
+' ─── Relationships ──────────────────────────────────────────────────
+TranslatorResource     --> TranslationService : uses
+TranslatorResource     --> AppConfig : reads config
+TranslationService     --> GeminiTranslationClient : delegates to
+TranslationService     --> AppConfig : reads config
+TranslationService     --> TranslationRequest : accepts
+TranslationService     --> TranslationResponse : produces
+TranslationService     ..> ValidationException : throws
+GeminiTranslationClient --> AppConfig : reads config
+GeminiTranslationClient ..> TranslationException : throws
+BasicAuthFilter        --> AppConfig : reads credentials
+BasicAuthFilter        --> ErrorResponse : produces on 401
+
+note right of GeminiTranslationClient
+  Calls Google Gemini REST API
+  via Java 11+ HttpClient.
+  Parses response with Jakarta JSON-P.
+end note
+
+note right of BasicAuthFilter
+  @PreMatching — runs BEFORE
+  any resource method.
+  Bypassed: OPTIONS (CORS preflight)
+  Public: /health, /info
+  Protected: /translate
+end note
+
+@enduml

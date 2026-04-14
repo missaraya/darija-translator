@@ -1,0 +1,112 @@
+@startuml deployment-diagram
+title LLM Darija Translator — Deployment Diagram
+
+skinparam nodeFontSize 13
+skinparam componentFontSize 12
+skinparam backgroundColor #FAFAFA
+skinparam nodeBackgroundColor #EBF8FF
+skinparam nodeBorderColor #3182CE
+skinparam componentBackgroundColor #F0FFF4
+skinparam componentBorderColor #38A169
+skinparam databaseBackgroundColor #FFF5F5
+skinparam databaseBorderColor #FC8181
+skinparam arrowColor #2B6CB0
+skinparam noteBackgroundColor #FFFBEB
+skinparam noteBorderColor #F6AD55
+
+' ─── Developer Machine / Localhost ──────────────────────────────────
+node "Developer Machine\n(localhost)" as devMachine {
+
+  node "JVM — Payara Micro 6\n:9080" as payara {
+    component "darija-translator.war" as war {
+      component "TranslatorApplication\n(JAX-RS)" as app
+      component "TranslatorResource\n@Path /api/translator" as resource
+      component "TranslationService" as service
+      component "GeminiTranslationClient" as llmClient
+      component "BasicAuthFilter\n(Basic Auth)" as authFilter
+      component "CorsFilter" as corsFilter
+    }
+  }
+
+  node "PHP Built-in Server\n:9081" as phpServer {
+    component "index.php\ntranslator.php" as phpApp
+  }
+
+  node "Python — Streamlit\n:8501" as streamlit {
+    component "app.py\n(Streamlit)" as pyApp
+  }
+
+  node "Expo Dev Server\n:19000 (Metro)" as expo {
+    component "React Native App\n(Expo)" as rnApp
+  }
+
+}
+
+' ─── Browser / Client Devices ───────────────────────────────────────
+node "User's Browser\n(Chrome)" as browser {
+  component "Chrome Extension\n(Manifest V3)\n- background.js\n- sidepanel.html" as chromeExt
+  component "PHP Client UI\n(:8081)" as phpUI
+  component "Python Client UI\n(:8501)" as pyUI
+}
+
+node "Mobile Device /\nAndroid Emulator" as mobile {
+  component "Expo Go / APK\n(React Native)" as mobileApp
+}
+
+node "Postman Desktop" as postman {
+  component "Collection:\nDarija Translator" as postmanColl
+}
+
+' ─── External Services ───────────────────────────────────────────────
+cloud "Google Cloud" as gcloud {
+  component "Gemini API\ngenerativelanguage.googleapis.com\n(gemini-1.5-flash)" as geminiAPI
+}
+
+' ─── Connections ─────────────────────────────────────────────────────
+
+' Backend to Gemini
+llmClient --> geminiAPI : HTTPS POST\n/v1beta/models/gemini-1.5-flash\n:generateContent?key=...
+
+' Chrome Extension to backend
+chromeExt --> payara : HTTP POST :9080\n/api/translator/translate\n(Basic Auth)
+
+' PHP client
+phpUI --> phpServer : user browser
+phpApp --> payara : HTTP POST :9080\n/api/translator/translate\n(cURL + Basic Auth)
+
+' Python Streamlit
+pyUI --> streamlit : user browser
+pyApp --> payara : HTTP POST :9080\n/api/translator/translate\n(requests + Basic Auth)
+
+' React Native
+mobileApp --> payara : HTTP POST :9080\n/api/translator/translate\n(axios + Basic Auth)
+rnApp --> mobileApp : Expo Go bundles
+
+' Postman
+postmanColl --> payara : HTTP\n(GET health, GET info,\nPOST translate)
+
+' Internal component connections
+authFilter --> resource : passes on success\n/ aborts with 401
+resource --> service
+service --> llmClient
+
+note right of payara
+  Run: cd backend
+  mvn package payara-micro:start
+  Downloads ~60 MB on first run
+end note
+
+note right of geminiAPI
+  Requires GEMINI_API_KEY
+  env variable.
+  Free tier: 15 RPM,
+  1 million TPM
+end note
+
+note bottom of chromeExt
+  Load unpacked at
+  chrome://extensions
+  in Developer Mode
+end note
+
+@enduml

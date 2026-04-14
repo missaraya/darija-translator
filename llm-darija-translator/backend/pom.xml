@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.translator</groupId>
+    <artifactId>darija-translator</artifactId>
+    <version>1.0.0</version>
+    <packaging>war</packaging>
+
+    <name>Darija Translator REST Service</name>
+    <description>LLM-powered REST service for English to Moroccan Darija translation</description>
+
+    <properties>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <jakartaee.version>10.0.0</jakartaee.version>
+        <microprofile.version>6.1</microprofile.version>
+        <!--
+            Payara Micro version — change to the latest available if this one
+            is not found. Check: https://mvnrepository.com/artifact/fish.payara.extras/payara-micro
+        -->
+        <payara.version>6.2024.6</payara.version>
+    </properties>
+
+    <dependencies>
+        <!-- Jakarta EE 10 API — provided by Payara Micro at runtime -->
+        <dependency>
+            <groupId>jakarta.platform</groupId>
+            <artifactId>jakarta.jakartaee-api</artifactId>
+            <version>${jakartaee.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- MicroProfile Config — provided by Payara Micro at runtime -->
+        <dependency>
+            <groupId>org.eclipse.microprofile</groupId>
+            <artifactId>microprofile</artifactId>
+            <version>${microprofile.version}</version>
+            <type>pom</type>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>darija-translator</finalName>
+        <plugins>
+            <!-- WAR plugin — no web.xml required (annotations-only) -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>3.4.0</version>
+                <configuration>
+                    <failOnMissingWebXml>false</failOnMissingWebXml>
+                </configuration>
+            </plugin>
+
+            <!--
+                Payara Micro Maven Plugin
+                Run with: mvn package payara-micro:start
+                Set GEMINI_API_KEY as an environment variable before running.
+            -->
+            <plugin>
+                <groupId>fish.payara.maven.plugins</groupId>
+                <artifactId>payara-micro-maven-plugin</artifactId>
+                <version>2.3</version>
+                <configuration>
+                    <payaraVersion>${payara.version}</payaraVersion>
+                    <deployWar>true</deployWar>
+                    <contextRoot>/</contextRoot>
+                    <useUberJar>false</useUberJar>
+                    <commandLineOptions>
+                        <option>
+                            <key>--port</key>
+                            <value>9080</value>
+                        </option>
+                    </commandLineOptions>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

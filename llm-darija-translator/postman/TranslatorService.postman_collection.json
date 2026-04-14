@@ -1,0 +1,282 @@
+{
+  "info": {
+    "_postman_id": "darija-translator-collection-001",
+    "name": "Darija Translator Service",
+    "description": "LLM-powered REST API for English to Moroccan Darija translation.\n\nSetup:\n1. Import both this collection and the environment file.\n2. Select the 'Darija Translator — Local' environment.\n3. Start the backend: cd backend && mvn package payara-micro:start\n4. Run requests in order.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Health Check (public)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/translator/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "translator", "health"]
+        },
+        "description": "Public endpoint — no authentication required.\nVerifies the backend is running.\n\nExpected response (200 OK):\n{\n  \"status\": \"UP\",\n  \"service\": \"Darija Translator\",\n  \"version\": \"1.0.0\"\n}"
+      },
+      "response": [
+        {
+          "name": "200 OK — Backend is running",
+          "status": "OK",
+          "code": 200,
+          "header": [
+            { "key": "Content-Type", "value": "application/json" }
+          ],
+          "body": "{\n  \"status\": \"UP\",\n  \"service\": \"Darija Translator\",\n  \"version\": \"1.0.0\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "2. Service Info (public)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/translator/info",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "translator", "info"]
+        },
+        "description": "Returns service metadata: provider, model, supported languages, limits.\nPublic — no authentication required."
+      },
+      "response": [
+        {
+          "name": "200 OK — Service info",
+          "status": "OK",
+          "code": 200,
+          "header": [
+            { "key": "Content-Type", "value": "application/json" }
+          ],
+          "body": "{\n  \"service\": \"Darija Translator\",\n  \"version\": \"1.0.0\",\n  \"provider\": \"Gemini\",\n  \"model\": \"gemini-1.5-flash\",\n  \"supportedTargets\": [\"Moroccan Darija\", \"French\", \"Spanish\", \"Arabic\"],\n  \"maxTextLength\": 5000\n}"
+        }
+      ]
+    },
+    {
+      "name": "3. Translate — Success",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "auth": {
+          "type": "basic",
+          "basic": [
+            { "key": "username", "value": "{{username}}", "type": "string" },
+            { "key": "password", "value": "{{password}}", "type": "string" }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"text\": \"How are you today?\",\n  \"sourceLanguage\": \"English\",\n  \"targetLanguage\": \"Moroccan Darija\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/translator/translate",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "translator", "translate"]
+        },
+        "description": "Main translation endpoint — requires Basic Auth.\n\nCredentials used: {{username}} / {{password}}\n\nExpected response (200 OK):\n{\n  \"originalText\": \"How are you today?\",\n  \"translatedText\": \"Kidayr lyoum?\",\n  \"sourceLanguage\": \"English\",\n  \"targetLanguage\": \"Moroccan Darija\",\n  \"provider\": \"Gemini\",\n  \"status\": \"success\"\n}"
+      },
+      "response": [
+        {
+          "name": "200 OK — Translation success",
+          "status": "OK",
+          "code": 200,
+          "header": [
+            { "key": "Content-Type", "value": "application/json" }
+          ],
+          "body": "{\n  \"originalText\": \"How are you today?\",\n  \"translatedText\": \"كيداير اليوم؟\",\n  \"sourceLanguage\": \"English\",\n  \"targetLanguage\": \"Moroccan Darija\",\n  \"provider\": \"Gemini\",\n  \"status\": \"success\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "4. Translate — Longer Text",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "auth": {
+          "type": "basic",
+          "basic": [
+            { "key": "username", "value": "{{username}}", "type": "string" },
+            { "key": "password", "value": "{{password}}", "type": "string" }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"text\": \"Good morning! I would like to order a coffee with milk and two croissants, please. How much does it cost?\",\n  \"sourceLanguage\": \"English\",\n  \"targetLanguage\": \"Moroccan Darija\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/translator/translate",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "translator", "translate"]
+        },
+        "description": "Translates a longer, more natural sentence."
+      },
+      "response": []
+    },
+    {
+      "name": "5. Translate — French to Darija",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "auth": {
+          "type": "basic",
+          "basic": [
+            { "key": "username", "value": "{{username}}", "type": "string" },
+            { "key": "password", "value": "{{password}}", "type": "string" }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"text\": \"Bonjour, comment tu vas?\",\n  \"sourceLanguage\": \"French\",\n  \"targetLanguage\": \"Moroccan Darija\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/translator/translate",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "translator", "translate"]
+        },
+        "description": "Translates from French to Darija. Note sourceLanguage field."
+      },
+      "response": []
+    },
+    {
+      "name": "6. Translate — Unauthorized (no auth)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "auth": {
+          "type": "noauth"
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"text\": \"Hello\",\n  \"sourceLanguage\": \"English\",\n  \"targetLanguage\": \"Moroccan Darija\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/translator/translate",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "translator", "translate"]
+        },
+        "description": "Demonstrates that the /translate endpoint rejects requests with no credentials.\n\nExpected response (401 Unauthorized):\n{\n  \"error\": \"Unauthorized\",\n  \"message\": \"Authorization header required\",\n  \"status\": 401\n}"
+      },
+      "response": [
+        {
+          "name": "401 Unauthorized — No credentials",
+          "status": "Unauthorized",
+          "code": 401,
+          "header": [
+            { "key": "Content-Type",   "value": "application/json" },
+            { "key": "WWW-Authenticate","value": "Basic realm=\"DarijaTranslator\"" }
+          ],
+          "body": "{\n  \"error\": \"Unauthorized\",\n  \"message\": \"Authorization header required\",\n  \"status\": 401\n}"
+        }
+      ]
+    },
+    {
+      "name": "7. Translate — Wrong Password",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "auth": {
+          "type": "basic",
+          "basic": [
+            { "key": "username", "value": "student",     "type": "string" },
+            { "key": "password", "value": "wrongpassword","type": "string" }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"text\": \"Hello\",\n  \"sourceLanguage\": \"English\",\n  \"targetLanguage\": \"Moroccan Darija\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/translator/translate",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "translator", "translate"]
+        },
+        "description": "Demonstrates that wrong credentials return 401.\n\nExpected: 401 Unauthorized"
+      },
+      "response": []
+    },
+    {
+      "name": "8. Translate — Validation Error (empty text)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "auth": {
+          "type": "basic",
+          "basic": [
+            { "key": "username", "value": "{{username}}", "type": "string" },
+            { "key": "password", "value": "{{password}}", "type": "string" }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"text\": \"\",\n  \"sourceLanguage\": \"English\",\n  \"targetLanguage\": \"Moroccan Darija\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/translator/translate",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "translator", "translate"]
+        },
+        "description": "Demonstrates input validation — empty text field.\n\nExpected response (400 Bad Request):\n{\n  \"error\": \"Validation Error\",\n  \"message\": \"The 'text' field must not be empty.\",\n  \"status\": 400\n}"
+      },
+      "response": [
+        {
+          "name": "400 Bad Request — Empty text",
+          "status": "Bad Request",
+          "code": 400,
+          "header": [
+            { "key": "Content-Type", "value": "application/json" }
+          ],
+          "body": "{\n  \"error\": \"Validation Error\",\n  \"message\": \"The 'text' field must not be empty.\",\n  \"status\": 400\n}"
+        }
+      ]
+    },
+    {
+      "name": "9. Translate — Validation Error (null text)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "auth": {
+          "type": "basic",
+          "basic": [
+            { "key": "username", "value": "{{username}}", "type": "string" },
+            { "key": "password", "value": "{{password}}", "type": "string" }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"sourceLanguage\": \"English\",\n  \"targetLanguage\": \"Moroccan Darija\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/translator/translate",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "translator", "translate"]
+        },
+        "description": "Demonstrates validation when the 'text' field is completely missing.\n\nExpected: 400 Bad Request"
+      },
+      "response": []
+    }
+  ],
+  "variable": []
+}

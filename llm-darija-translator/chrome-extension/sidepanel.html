@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Darija Translator</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ── Header ─────────────────────────────────────────────── -->
+  <header class="header">
+    <div class="header-left">
+      <span class="logo">🌙</span>
+      <h1 class="header-title">Darija Translator</h1>
+    </div>
+    <button id="btn-settings" class="icon-btn" title="Settings">⚙️</button>
+  </header>
+
+  <!-- ── Settings Panel (hidden by default) ─────────────────── -->
+  <section id="settings-panel" class="settings-panel hidden">
+    <h2 class="section-title">Settings</h2>
+
+    <label class="form-label">Backend URL</label>
+    <input id="setting-url" class="form-input" type="text"
+           placeholder="http://localhost:8080" />
+
+    <label class="form-label">Username</label>
+    <input id="setting-username" class="form-input" type="text"
+           placeholder="student" />
+
+    <label class="form-label">Password</label>
+    <input id="setting-password" class="form-input" type="password"
+           placeholder="student123" />
+
+    <button id="btn-save-settings" class="btn-primary">Save Settings</button>
+    <div id="settings-status" class="status-msg hidden"></div>
+  </section>
+
+  <!-- ── Main Translation Panel ─────────────────────────────── -->
+  <main id="main-panel" class="main-panel">
+
+    <!-- Source text input -->
+    <div class="form-group">
+      <label class="form-label">Source Text
+        <span class="lang-badge">English → Darija</span>
+      </label>
+      <textarea id="source-text" class="form-textarea"
+                placeholder="Enter text to translate, or right-click selected text on any page…"
+                rows="5"></textarea>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="btn-row">
+      <button id="btn-translate" class="btn-primary">
+        <span id="btn-translate-label">Translate</span>
+      </button>
+      <button id="btn-clear" class="btn-secondary" title="Clear">✕ Clear</button>
+    </div>
+
+    <!-- Loading indicator -->
+    <div id="loading" class="loading hidden">
+      <div class="spinner"></div>
+      <span>Translating…</span>
+    </div>
+
+    <!-- Error message -->
+    <div id="error-box" class="error-box hidden"></div>
+
+    <!-- Translation result -->
+    <div id="result-section" class="result-section hidden">
+      <label class="form-label">Translation (Darija)</label>
+      <div id="result-text" class="result-text" dir="auto"></div>
+
+      <div class="result-actions">
+        <button id="btn-copy"  class="btn-action" title="Copy translation">📋 Copy</button>
+        <button id="btn-speak" class="btn-action" title="Read aloud">🔊 Read</button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ── Footer ─────────────────────────────────────────────── -->
+  <footer class="footer">
+    <span id="status-bar">Ready</span>
+  </footer>
+
+  <script src="sidepanel.js"></script>
+</body>
+</html>

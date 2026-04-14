@@ -1,0 +1,106 @@
+@startuml sequence-diagram
+title Translation Request — End-to-End Sequence
+
+skinparam sequenceArrowThickness 1.5
+skinparam sequenceParticipantBorderColor #3182CE
+skinparam sequenceParticipantBackgroundColor #EBF8FF
+skinparam sequenceActorBorderColor #2B6CB0
+skinparam sequenceActorBackgroundColor #BEE3F8
+skinparam sequenceLifeLineBorderColor #90CDF4
+skinparam noteBackgroundColor #FFFBEB
+skinparam noteBorderColor #F6AD55
+skinparam backgroundColor #FAFAFA
+
+actor       "User"               as user
+participant "Client\n(any)"      as client   #F0FFF4
+participant "BasicAuthFilter"    as filter   #FFF5F5
+participant "TranslatorResource\n/api/translator/translate" as resource #EBF8FF
+participant "TranslationService" as service  #EBF8FF
+participant "GeminiTranslation\nClient"      as gemini  #EBF8FF
+participant "Gemini API\n(Google)" as gapi   #FED7E2
+
+' ─── Step 1: User initiates request ──────────────────────────────
+user -> client : Select text and click\n"Translate to Darija"
+activate client
+
+client -> filter : POST /api/translator/translate\nAuthorization: Basic <base64>\nContent-Type: application/json\n{\n  "text": "How are you?",\n  "sourceLanguage": "English",\n  "targetLanguage": "Moroccan Darija"\n}
+activate filter
+
+' ─── Step 2: Basic Auth validation ───────────────────────────────
+note over filter
+  @PreMatching filter —
+  intercepts EVERY request
+  before any resource method.
+end note
+
+filter -> filter : Decode Base64 credentials\nCompare with AppConfig\n(username / password)
+
+alt Invalid or missing credentials
+  filter --> client : 401 Unauthorized\n{"error":"Unauthorized",\n "message":"Authorization header required",\n "status":401}
+  client --> user : Show error:\n"Authentication failed"
+else Valid credentials
+  filter -> resource : Forward request
+  deactivate filter
+  activate resource
+end
+
+' ─── Step 3: Resource receives request ───────────────────────────
+resource -> service : translate(TranslationRequest)
+activate service
+
+' ─── Step 4: Service validates input ─────────────────────────────
+service -> service : validate(request)\n- null check\n- empty text check\n- max length check
+
+alt Validation fails (empty text, too long, etc.)
+  service --> resource : throw ValidationException
+  resource --> client : 400 Bad Request\n{"error":"Validation Error",\n "message":"...",\n "status":400}
+  client --> user : Show validation error
+else Validation passes
+  service -> service : Resolve default languages\n(English → Moroccan Darija)
+end
+
+' ─── Step 5: LLM Client is called ────────────────────────────────
+service -> gemini : translate(text, sourceLanguage, targetLanguage)
+activate gemini
+
+gemini -> gemini : buildPrompt()\n(instructions + text)
+
+gemini -> gapi : HTTPS POST\n/v1beta/models/gemini-1.5-flash\n:generateContent?key=API_KEY\n{\n  "contents":[{"parts":[{"text":"..."}]}],\n  "generationConfig":{"temperature":0.3}\n}
+activate gapi
+
+note right of gapi
+  Gemini processes the
+  prompt with strict
+  translation instructions.
+  Returns only Darija text.
+end note
+
+alt Gemini API error (quota, key invalid, timeout)
+  gapi --> gemini : 4xx or 5xx response
+  gemini --> service : throw TranslationException
+  service --> resource : propagate exception
+  resource --> client : 502 Bad Gateway\n{"error":"Translation Error"}
+  client --> user : Show error:\n"LLM unavailable"
+else Success
+  gapi --> gemini : 200 OK\n{"candidates":[{"content":{"parts":[{"text":"كيداير اليوم؟"}]}}]}
+  deactivate gapi
+end
+
+gemini -> gemini : parseTranslatedText()\nExtract text from JSON path:\ncandidates[0].content.parts[0].text
+
+gemini --> service : "كيداير اليوم؟"
+deactivate gemini
+
+' ─── Step 6: Build response ──────────────────────────────────────
+service -> service : Build TranslationResponse\n(originalText, translatedText,\nsourceLanguage, targetLanguage,\nprovider="Gemini", status="success")
+
+service --> resource : TranslationResponse
+deactivate service
+
+resource --> client : 200 OK\n{\n  "originalText": "How are you?",\n  "translatedText": "كيداير اليوم؟",\n  "sourceLanguage": "English",\n  "targetLanguage": "Moroccan Darija",\n  "provider": "Gemini",\n  "status": "success"\n}
+deactivate resource
+
+client --> user : Display translated text:\n"كيداير اليوم؟"
+deactivate client
+
+@enduml

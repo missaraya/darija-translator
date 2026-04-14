@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Darija Translator",
+    "slug": "darija-translator",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#2b6cb0"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.student.darijatranlator"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#2b6cb0"
+      },
+      "package": "com.student.darija_translator"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
